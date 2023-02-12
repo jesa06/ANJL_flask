@@ -20,7 +20,7 @@ class Post(db.Model):
     note = db.Column(db.Text, unique=False, nullable=False)
     image = db.Column(db.String, unique=False)
     # Define a relationship in Notes Schema to userID who originates the note, many-to-one (many notes to one user)
-    userID = db.Column(db.Integer, db.ForeignKey('users.id'))
+    userID = db.Column(db.Integer, db.ForeignKey('Accounts.id'))
 
     # Constructor of a Notes object, initializes of instance variables within object
     def __init__(self, id, note, image):
@@ -69,25 +69,25 @@ class Post(db.Model):
 # -- a.) db.Model is like an inner layer of the onion in ORM
 # -- b.) User represents data we want to store, something that is built on db.Model
 # -- c.) SQLAlchemy ORM is layer on top of SQLAlchemy Core, then SQLAlchemy engine, SQL
-class User(db.Model):
-    __tablename__ = 'users'  # table name is plural, class name is singular
+class Account(db.Model):
+    __tablename__ = 'Accounts'  # table name is plural, class name is singular
 
     # Define the User schema with "vars" from object
     id = db.Column(db.Integer, primary_key=True)
     _name = db.Column(db.String(255), unique=False, nullable=False)
-    _uid = db.Column(db.String(255), unique=True, nullable=False)
+    _email = db.Column(db.String(255), unique=True, nullable=False)
+    _phonenumber = db.Column(db.String(225), unique=False, nullable=False)
     _password = db.Column(db.String(255), unique=False, nullable=False)
-    _dob = db.Column(db.Date)
 
     # Defines a relationship between User record and Notes table, one-to-many (one user to many notes)
     posts = db.relationship("Post", cascade='all, delete', backref='users', lazy=True)
 
     # constructor of a User object, initializes the instance variables within object (self)
-    def __init__(self, name, uid, password="123qwerty", dob=date.today()):
+    def __init__(self, name, email, password="teamANJL", phonenumber="8580008888"):
         self._name = name    # variables with self prefix become part of the object, 
-        self._uid = uid
-        self.set_password(password)
-        self._dob = dob
+        self._email = email
+        self._phonenumber = phonenumber 
+        self._password = password
 
     # a name getter method, extracts name from object
     @property
@@ -101,17 +101,22 @@ class User(db.Model):
     
     # a getter method, extracts email from object
     @property
-    def uid(self):
-        return self._uid
+    def email(self):
+        return self._email
     
     # a setter function, allows name to be updated after initial object creation
-    @uid.setter
-    def uid(self, uid):
-        self._uid = uid
+    @email.setter
+    def email(self, email):
+        self._email = email
         
-    # check if uid parameter matches user id in object, return boolean
-    def is_uid(self, uid):
-        return self._uid == uid
+    @property
+    def phonenumber(self):
+        return self._phonenumber
+    
+    # a setter function, allows name to be updated after initial object creation
+    @phonenumber.setter
+    def phonenumber(self, phonenumber):
+        self._phonenumber = phonenumber
     
     @property
     def password(self):
@@ -128,21 +133,6 @@ class User(db.Model):
         result = check_password_hash(self._password, password)
         return result
     
-    # dob property is returned as string, to avoid unfriendly outcomes
-    @property
-    def dob(self):
-        dob_string = self._dob.strftime('%m-%d-%Y')
-        return dob_string
-    
-    # dob should be have verification for type date
-    @dob.setter
-    def dob(self, dob):
-        self._dob = dob
-    
-    @property
-    def age(self):
-        today = date.today()
-        return today.year - self._dob.year - ((today.month, today.day) < (self._dob.month, self._dob.day))
     
     # output content using str(object) in human readable form, uses getter
     # output content using json dumps, this is ready for API response
@@ -167,22 +157,24 @@ class User(db.Model):
         return {
             "id": self.id,
             "name": self.name,
-            "uid": self.uid,
-            "dob": self.dob,
-            "age": self.age,
+            "email": self.email,
+            "phonenumber": self.phonenumber,
+            "password": self.password,
             "posts": [post.read() for post in self.posts]
         }
 
     # CRUD update: updates user name, password, phone
     # returns self
-    def update(self, name="", uid="", password=""):
+    def update(self, name="", email="", phonenumber="", password=""):
         """only updates values with length"""
         if len(name) > 0:
             self.name = name
-        if len(uid) > 0:
-            self.uid = uid
+        if len(email) > 0:
+            self.email = email
+        if len(phonenumber) > 0:
+            self.phonenumber = phonenumber
         if len(password) > 0:
-            self.set_password(password)
+            self.password = password
         db.session.commit()
         return self
 
@@ -198,31 +190,30 @@ class User(db.Model):
 
 
 # Builds working data for testing
-def initUsers():
+def initAccounts():
     with app.app_context():
         """Create database and tables"""
         db.init_app(app)
         db.create_all()
         """Tester data for table"""
-        u1 = User(name='Thomas Edison', uid='toby', password='123toby', dob=date(1847, 2, 11))
-        u2 = User(name='Nicholas Tesla', uid='niko', password='123niko')
-        u3 = User(name='Alexander Graham Bell', uid='lex', password='123lex')
-        u4 = User(name='Eli Whitney', uid='whit', password='123whit')
-        u5 = User(name='John Mortensen', uid='jm1021', dob=date(1959, 10, 21))
+        a1 = Account(name='Joselyn Anda', email='joselyneliseanda@gmail.com', phonenumber='8588888888', password='123Ellyna')
+        a2 = Account(name='Naja Fonseca', email='tatertot347@gmail.com', phonenumber='7783302389', password='123potato')
+        a3 = Account(name='Lina Awad', email='linaaaaa1@gmail.com', phonenumber='7776665555', password='123lex')
+        a4 = Account(name='Amitha Sanka', email='amithaaaaa@gmail.com', phonenumber='423448891', password='123whit')
 
-        users = [u1, u2, u3, u4, u5]
+        accounts = [a1, a2, a3, a4]
 
         """Builds sample user/note(s) data"""
-        for user in users:
+        for Account in accounts:
             try:
                 '''add a few 1 to 4 notes per user'''
                 for num in range(randrange(1, 4)):
-                    note = "#### " + user.name + " note " + str(num) + ". \n Generated by test data."
-                    user.posts.append(Post(id=user.id, note=note, image='ncs_logo.png'))
+                    note = "#### " + Account.name + " note " + str(num) + ". \n Generated by test data."
+                    Account.posts.append(Post(id=Account.id, note=note, image='ncs_logo.png'))
                 '''add user/post data to table'''
-                user.create()
+                Account.create()
             except IntegrityError:
                 '''fails with bad or duplicate data'''
                 db.session.remove()
-                print(f"Records exist, duplicate email, or error: {user.uid}")
+                print(f"Records exist, duplicate email, or error: {Account.uid}")
             
