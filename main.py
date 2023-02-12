@@ -1,4 +1,3 @@
-import threading
 
 # import "packages" from flask
 from flask import render_template  # import render_template from "public" flask libraries
@@ -42,7 +41,12 @@ def activate_job():
 
 # this runs the application on the development server
 if __name__ == "__main__":
+<<<<<<< HEAD
     # change name for testing
     from flask_cors import CORS
     cors = CORS(app)
     app.run(debug=True, host="0.0.0.0", port="8745")
+=======
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite://volumessqlite.db'
+    app.run(debug=True, host="0.0.0.0", port="8086")
+>>>>>>> d330513d1acade33c227750562d312f403e9d259
