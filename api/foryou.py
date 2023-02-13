@@ -1,58 +1,64 @@
-import json
+from flask import Blueprint, request, jsonify
+from flask_restful import Api, Resource # used for REST API building
+from datetime import datetime
 
-class Activity:
-    def __inti__(activity, name, hobby, price, duration):
-        activity._name = name
-        activity._hobby = hobby
-        activity._price = price
-        activity._duration = duration
-        
-@property 
-def activity(activity):
-    return activity._name
+activity_api = Blueprint('activity_api', __name__,
+                   url_prefix='/api/activities')
 
-@activity.setter
-def activity(activity, name):
-    activity._name = name 
-    
-@property
-def hobby(activity):
-    return activity._hobby
+# API docs https://flask-restful.readthedocs.io/en/latest/api.html
+api = Api(activity_api)
 
-@hobby.setter
-def hobby(activity, hobby):
-    activity._hobby = hobby
-    
-@property
-def price(activity):
-    return activity._price
+class ActivityApi:        
+    class _Create(Resource):
+        def post(activity):
+            ''' Read data for json body '''
+            body = request.get_json()
+            
+            ''' Avoid garbage in, error checking '''
+            # validate name
+            name = body.get('name')
+            if name is None or len(name) < 2:
+                return {'message': f'Name is missing, or is less than 2 characters'}, 210
+            # validate uid
+            uid = body.get('uid')
+            if uid is None or len(uid) < 2:
+                return {'message': f'User ID is missing, or is less than 2 characters'}, 210
+            # look for password and dob
+            password = body.get('password')
+            dob = body.get('dob')
+            classOf = body.get('classOf')
 
-@price.setter
-def price(activity, price):
-    activity._price = price
-    
-@property
-def duration(activity):
-    return activity._duration
+            ''' #1: Key code block, setup USER OBJECT '''
+            uo = User(name=name, 
+                      uid=uid)
+            
+            ''' Additional garbage error checking '''
+            uo.classOf = classOf
+            # set password if provided
+            if password is not None:
+                uo.password = password
+            # convert to date type
+            if dob is not None:
+                try:
+                    uo.dob = datetime.strptime(dob, '%m-%d-%Y').date()
+                except:
+                    return {'message': f'Date of birth format error {dob}, must be mm-dd-yyyy'}, 210
+            
+            ''' #2: Key Code block to add user to database '''
+            # create user in database
+            user = uo.create()
+            # success returns json of user
+            if user:
+                return jsonify(user.read())
+            # failure returns error
+            return {'message': f'Processed {name}, either a format error or User ID {uid} is duplicate'}, 210
 
-@duration.setter
-def duration(activity, duration):
-    activity._duration = duration
-    
-# output content using str(object) in human readable form, uses getter
-    def __str__(activity):
-        return f'name: "{activity.name}", hobby: "{activity.hobby}", price: "{activity.price}", duration: "{activity.duration}"'
-    
-# output command to recreate the object, uses attribute directly
-    def __repr__(activity):
-        return f'Activity(name={activity._name}, hobby={activity._hobby}, price={activity._price}, duration={activity._duration})'
+    class _Read(Resource):
+        def get(activity):
+            users = User.query.all()    # read/extract all users from database
+            json_ready = [user.read() for user in users]  # prepare output in json
+            return jsonify(json_ready)  # jsonify creates Flask response object, more specific to APIs than json.dumps
 
-if __name__ == "__main__":
-    
-    #define activity objevts
-    a1 = Activity(name='SeaWorld', hobby='Amusement Park', price= '$100-$200', duration= 'all-day')
-
-# pur user objects in list for convenience
-activities = [a1]
-
-print(str(activity))
+    # building RESTapi endpoint
+    api.add_resource(_Create, '/create')
+    api.add_resource(_Read, '/')
