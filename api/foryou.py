@@ -55,7 +55,7 @@ class ActivityApi:
 
     class _Read(Resource):
         def get(activity):
-            users = User.query.all()    # read/extract all users from database
+            activities = Activity.query.all()    # read/extract all users from database
             json_ready = [user.read() for user in users]  # prepare output in json
             return jsonify(json_ready)  # jsonify creates Flask response object, more specific to APIs than json.dumps
 
